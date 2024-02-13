@@ -1,4 +1,5 @@
-package com.bolton.globalhotelhub.dto.request;
+package com.bolton.globalhotelhub.dto.response;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,9 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class FilterHotelRequestDTO {
-
-    private Long userId;
+public class HotelReportResponseDTO {
     private String location;
     private String checkin;
     private String checkout;
@@ -20,5 +19,4 @@ public class FilterHotelRequestDTO {
     private Number child;
     private Double maxPrice;
     private Double minPrice;
-
 }
