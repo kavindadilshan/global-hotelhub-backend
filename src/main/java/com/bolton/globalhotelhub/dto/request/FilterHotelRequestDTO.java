@@ -15,10 +15,10 @@ public class FilterHotelRequestDTO {
     private String location;
     private String checkin;
     private String checkout;
-    private Number rooms;
-    private Number adults;
-    private Number child;
-    private Double maxPrice;
-    private Double minPrice;
+    private String rooms;
+    private String adults;
+    private String child;
+    private String maxPrice;
+    private String minPrice;
 
 }
