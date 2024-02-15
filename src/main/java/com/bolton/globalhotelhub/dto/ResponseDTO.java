@@ -10,6 +10,6 @@ public class ResponseDTO {
     String image;
     String address;
     String price;
-    String dateTime;
+    String amenities;
     String publishSite;
 }
