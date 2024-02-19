@@ -3,6 +3,7 @@ package com.bolton.globalhotelhub.controller;
 import com.bolton.globalhotelhub.dto.response.CommonDataResponseDTO;
 import com.bolton.globalhotelhub.dto.response.HotelReportResponseDTO;
 import com.bolton.globalhotelhub.dto.response.SearchHotelHistoryResponseDTO;
+import com.bolton.globalhotelhub.dto.response.UserReportResponseDTO;
 import com.bolton.globalhotelhub.service.SearchHotelHistoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -37,4 +38,17 @@ public class SearchHotelHistoryController {
         List<HotelReportResponseDTO> responseDTOS = searchHotelHistoryService.getHotelReport();
         return new ResponseEntity<>(new CommonDataResponseDTO(true, responseDTOS), HttpStatus.OK);
     }
+
+    @GetMapping(value = "dashboard",produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getTopRatedHotels(){
+        List<HotelReportResponseDTO> responseDTOS = searchHotelHistoryService.getTopRatedHotels();
+        return new ResponseEntity<>(new CommonDataResponseDTO(true, responseDTOS), HttpStatus.OK);
+    }
+
+    @GetMapping(value = "user/report",produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getUserReport(){
+        List<UserReportResponseDTO> responseDTOS = searchHotelHistoryService.getUserReport();
+        return new ResponseEntity<>(new CommonDataResponseDTO(true, responseDTOS), HttpStatus.OK);
+    }
+
 }

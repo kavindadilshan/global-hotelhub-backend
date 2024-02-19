@@ -2,10 +2,12 @@ package com.bolton.globalhotelhub.service.impl;
 
 import com.bolton.globalhotelhub.dto.response.HotelReportResponseDTO;
 import com.bolton.globalhotelhub.dto.response.SearchHotelHistoryResponseDTO;
+import com.bolton.globalhotelhub.dto.response.UserReportResponseDTO;
 import com.bolton.globalhotelhub.entity.SearchHotelHistory;
 import com.bolton.globalhotelhub.entity.Users;
 import com.bolton.globalhotelhub.exception.GlobalHotelHubServiceException;
 import com.bolton.globalhotelhub.rawdata.HotelReportRawData;
+import com.bolton.globalhotelhub.rawdata.UserReportRawData;
 import com.bolton.globalhotelhub.repository.SearchHotelHistoryRepository;
 import com.bolton.globalhotelhub.repository.UserRepository;
 import com.bolton.globalhotelhub.service.SearchHotelHistoryService;
@@ -116,13 +118,66 @@ public class SearchHotelHistoryServiceImpl implements SearchHotelHistoryService 
                 hotelReportResponseDTO.setChild(searchHistory.getChild());
                 hotelReportResponseDTO.setMaxPrice(searchHistory.getMaxPrice());
                 hotelReportResponseDTO.setMinPrice(searchHistory.getMinPrice());
+                hotelReportResponseDTO.setCount(searchHistory.getCount());
 
                 historyList.add(hotelReportResponseDTO);
 
             }
             return historyList;
         } catch (Exception e) {
-            LOGGER.error("Function : getVehicleReport  : " + e.getMessage());
+            LOGGER.error("Function : getHotelsReport  : " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<HotelReportResponseDTO> getTopRatedHotels() {
+        try {
+            List<HotelReportRawData> result = searchHotelHistoryRepository.getMostVisitedHotelStatics();
+            List<HotelReportResponseDTO> historyList = new ArrayList<>();
+
+            for (HotelReportRawData searchHistory : result) {
+                HotelReportResponseDTO hotelReportResponseDTO = new HotelReportResponseDTO();
+                hotelReportResponseDTO.setLocation(searchHistory.getLocation());
+                hotelReportResponseDTO.setCheckin(searchHistory.getCheckin());
+                hotelReportResponseDTO.setCheckout(searchHistory.getCheckout());
+                hotelReportResponseDTO.setRooms(searchHistory.getRooms());
+                hotelReportResponseDTO.setAdults(searchHistory.getAdults());
+                hotelReportResponseDTO.setChild(searchHistory.getChild());
+                hotelReportResponseDTO.setMaxPrice(searchHistory.getMaxPrice());
+                hotelReportResponseDTO.setMinPrice(searchHistory.getMinPrice());
+                hotelReportResponseDTO.setCount(searchHistory.getCount());
+
+                historyList.add(hotelReportResponseDTO);
+            }
+            return historyList;
+        } catch (Exception e) {
+            LOGGER.error("Function : getTopRatedVehicleBrand  : " + e.getMessage());
+            throw e;
+        }
+
+    }
+
+    @Override
+    public List<UserReportResponseDTO> getUserReport() {
+        try {
+            List<UserReportRawData> result = searchHotelHistoryRepository.getMostActiveUsersReport();
+            List<UserReportResponseDTO> responseDTOS = new ArrayList<>();
+
+            for (UserReportRawData reportRawData:result){
+                UserReportResponseDTO userReportResponseDTO = new UserReportResponseDTO();
+                userReportResponseDTO.setName(reportRawData.getName());
+                userReportResponseDTO.setEmail(reportRawData.getEmail());
+                userReportResponseDTO.setContactNumber(reportRawData.getContact_Number());
+                userReportResponseDTO.setActiveTimes(reportRawData.getFiltering_Count());
+
+                responseDTOS.add(userReportResponseDTO);
+            }
+
+            return responseDTOS;
+
+        } catch (Exception e) {
+            LOGGER.error("Function : getUserReport  : " + e.getMessage());
             throw e;
         }
     }

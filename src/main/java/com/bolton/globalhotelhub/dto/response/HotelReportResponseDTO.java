@@ -19,4 +19,5 @@ public class HotelReportResponseDTO {
     private String child;
     private String maxPrice;
     private String minPrice;
+    private String count;
 }
