@@ -1,6 +1,7 @@
 package com.bolton.globalhotelhub.controller;
 
 import com.bolton.globalhotelhub.dto.response.CommonDataResponseDTO;
+import com.bolton.globalhotelhub.dto.response.HotelReportResponseDTO;
 import com.bolton.globalhotelhub.dto.response.SearchHotelHistoryResponseDTO;
 import com.bolton.globalhotelhub.service.SearchHotelHistoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,4 +32,9 @@ public class SearchHotelHistoryController {
         return new ResponseEntity<>(new CommonDataResponseDTO(true, responseDTOS), HttpStatus.OK);
     }
 
+    @GetMapping(value = "hotel/report",produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getHotelReport(){
+        List<HotelReportResponseDTO> responseDTOS = searchHotelHistoryService.getHotelReport();
+        return new ResponseEntity<>(new CommonDataResponseDTO(true, responseDTOS), HttpStatus.OK);
+    }
 }

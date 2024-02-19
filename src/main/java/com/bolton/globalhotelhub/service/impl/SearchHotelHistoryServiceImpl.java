@@ -1,9 +1,11 @@
 package com.bolton.globalhotelhub.service.impl;
 
+import com.bolton.globalhotelhub.dto.response.HotelReportResponseDTO;
 import com.bolton.globalhotelhub.dto.response.SearchHotelHistoryResponseDTO;
 import com.bolton.globalhotelhub.entity.SearchHotelHistory;
 import com.bolton.globalhotelhub.entity.Users;
 import com.bolton.globalhotelhub.exception.GlobalHotelHubServiceException;
+import com.bolton.globalhotelhub.rawdata.HotelReportRawData;
 import com.bolton.globalhotelhub.repository.SearchHotelHistoryRepository;
 import com.bolton.globalhotelhub.repository.UserRepository;
 import com.bolton.globalhotelhub.service.SearchHotelHistoryService;
@@ -37,14 +39,14 @@ public class SearchHotelHistoryServiceImpl implements SearchHotelHistoryService 
     public List<SearchHotelHistoryResponseDTO> getSearchHotelHistoryByUser(Long userId) {
         Optional<Users> user = userRepository.findById(userId);
 
-        if(!user.isPresent())
+        if (!user.isPresent())
             throw new GlobalHotelHubServiceException(RESOURCE_NOT_FOUND, "User not found");
 
         List<SearchHotelHistory> result = searchHotelHistoryRepository.getSearchHotelHistoriesByUsersId(userId);
 
         List<SearchHotelHistoryResponseDTO> historyList = new ArrayList<>();
 
-        for (SearchHotelHistory searchHotelHistory:result){
+        for (SearchHotelHistory searchHotelHistory : result) {
             SearchHotelHistoryResponseDTO searchHotelHistoryResponseDTO = new SearchHotelHistoryResponseDTO();
             searchHotelHistoryResponseDTO.setUserId(searchHotelHistory.getUsers().getId());
             searchHotelHistoryResponseDTO.setFullName(searchHotelHistory.getUsers().getName());
@@ -56,6 +58,7 @@ public class SearchHotelHistoryServiceImpl implements SearchHotelHistoryService 
             searchHotelHistoryResponseDTO.setChild(searchHotelHistory.getChild());
             searchHotelHistoryResponseDTO.setMaxPrice(searchHotelHistory.getMaxPrice());
             searchHotelHistoryResponseDTO.setMinPrice(searchHotelHistory.getMinPrice());
+            searchHotelHistoryResponseDTO.setDateTime(searchHotelHistory.getDateTime());
 
             historyList.add(searchHotelHistoryResponseDTO);
 
@@ -72,8 +75,8 @@ public class SearchHotelHistoryServiceImpl implements SearchHotelHistoryService 
             List<SearchHotelHistory> result = searchHotelHistoryRepository.findAll();
             List<SearchHotelHistoryResponseDTO> historyList = new ArrayList<>();
 
-            for (SearchHotelHistory searchHotelHistory:result){
-                SearchHotelHistoryResponseDTO searchHotelHistoryResponseDTO=new SearchHotelHistoryResponseDTO();
+            for (SearchHotelHistory searchHotelHistory : result) {
+                SearchHotelHistoryResponseDTO searchHotelHistoryResponseDTO = new SearchHotelHistoryResponseDTO();
                 searchHotelHistoryResponseDTO.setUserId(searchHotelHistory.getUsers().getId());
                 searchHotelHistoryResponseDTO.setFullName(searchHotelHistory.getUsers().getName());
                 searchHotelHistoryResponseDTO.setLocation(searchHotelHistory.getLocation());
@@ -84,16 +87,43 @@ public class SearchHotelHistoryServiceImpl implements SearchHotelHistoryService 
                 searchHotelHistoryResponseDTO.setChild(searchHotelHistory.getChild());
                 searchHotelHistoryResponseDTO.setMaxPrice(searchHotelHistory.getMaxPrice());
                 searchHotelHistoryResponseDTO.setMinPrice(searchHotelHistory.getMinPrice());
+                searchHotelHistoryResponseDTO.setDateTime(searchHotelHistory.getDateTime());
 
                 historyList.add(searchHotelHistoryResponseDTO);
             }
 
             return historyList;
 
-        }catch (Exception e){
+        } catch (Exception e) {
             LOGGER.error("Function : getAllSearchHistory  : " + e.getMessage());
             throw e;
         }
 
+    }
+
+    @Override
+    public List<HotelReportResponseDTO> getHotelReport() {
+        try {
+            List<HotelReportRawData> result = searchHotelHistoryRepository.getMostVisitedHotelReport();
+            List<HotelReportResponseDTO> historyList = new ArrayList<>();
+            for (HotelReportRawData searchHistory : result) {
+                HotelReportResponseDTO hotelReportResponseDTO = new HotelReportResponseDTO();
+                hotelReportResponseDTO.setLocation(searchHistory.getLocation());
+                hotelReportResponseDTO.setCheckin(searchHistory.getCheckin());
+                hotelReportResponseDTO.setCheckout(searchHistory.getCheckout());
+                hotelReportResponseDTO.setRooms(searchHistory.getRooms());
+                hotelReportResponseDTO.setAdults(searchHistory.getAdults());
+                hotelReportResponseDTO.setChild(searchHistory.getChild());
+                hotelReportResponseDTO.setMaxPrice(searchHistory.getMaxPrice());
+                hotelReportResponseDTO.setMinPrice(searchHistory.getMinPrice());
+
+                historyList.add(hotelReportResponseDTO);
+
+            }
+            return historyList;
+        } catch (Exception e) {
+            LOGGER.error("Function : getVehicleReport  : " + e.getMessage());
+            throw e;
+        }
     }
 }
