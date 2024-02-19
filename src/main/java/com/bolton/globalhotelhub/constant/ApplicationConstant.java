@@ -13,7 +13,11 @@ public class ApplicationConstant {
      * URL Pattern
      */
 
+    public static final String IKMAN_LK_URL = "https://ikman.lk/en/ads/%s/cars/%s?sort=relevance&buy_now=0&urgent=0&enum.condition=%s&enum.fuel_type=%s&numeric.model_year.maximum=%s";
 
+    public static final String RIYASEWANA_LK_URL = "https://riyasewana.com/search/cars/%s/%s/%s/%s/%s";
+
+    public static final String BOOKING_COM_URL = "https://www.booking.com/searchresults.en-gb.html?ss=%s&checkin=%s&checkout=%s&group_adults=%s&no_rooms=%s&group_children=%s&nflt=price=LKR-%s-%s-1";
 
     public static final String HOTEL_COM_URL = "https://www.hotels.com/Hotel-Search?adults=%s&children=%s&d1=%s&d2=%s&destination=%s&rooms=%s&price=%s&price=%s";
 

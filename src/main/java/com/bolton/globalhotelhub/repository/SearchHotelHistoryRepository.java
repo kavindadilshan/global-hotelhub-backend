@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface SearchHotelHistoryRepository extends JpaRepository<SearchHotelHistory,Long> {
 
+    List<SearchHotelHistory>  getSearchHotelHistoriesByUsersId(Long userId);
 }
