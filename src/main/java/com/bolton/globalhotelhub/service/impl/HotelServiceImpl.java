@@ -3,6 +3,7 @@ package com.bolton.globalhotelhub.service.impl;
 import com.bolton.globalhotelhub.constant.ApplicationConstant;
 import com.bolton.globalhotelhub.dto.ResponseDTO;
 import com.bolton.globalhotelhub.dto.request.FilterHotelRequestDTO;
+import com.bolton.globalhotelhub.entity.SearchHotelHistory;
 import com.bolton.globalhotelhub.entity.Users;
 import com.bolton.globalhotelhub.exception.GlobalHotelHubServiceException;
 import com.bolton.globalhotelhub.repository.SearchHotelHistoryRepository;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,7 +48,7 @@ public class HotelServiceImpl implements HotelService {
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public List<ResponseDTO> getHotelByModel(FilterHotelRequestDTO filterHotelRequestDTO) {
         try {
-//            uitk-card-has-primary-theme
+
             List<ResponseDTO> responseDTOS = new ArrayList<>();
 
             String BookingComUrl = String.format(ApplicationConstant.BOOKING_COM_URL, filterHotelRequestDTO.getLocation(), filterHotelRequestDTO.getCheckin(), filterHotelRequestDTO.getCheckout(), filterHotelRequestDTO.getAdults(), filterHotelRequestDTO.getRooms(), filterHotelRequestDTO.getChild(), filterHotelRequestDTO.getMinPrice(), filterHotelRequestDTO.getMaxPrice());
@@ -58,12 +60,25 @@ public class HotelServiceImpl implements HotelService {
             extractDataFromBookingCom(responseDTOS, BookingComUrl);
 //            extractDataFromHotelsCom(responseDTOS, HotelComUrl);
             extractDataFromAirBnb(responseDTOS,AirBnbUrl);
-//
-//            Optional<Users> user = userRepository.findById(filterHotelRequestDTO.getUserId());
-//
-//            if(!user.isPresent())
-//                throw new GlobalHotelHubServiceException(RESOURCE_NOT_FOUND, "User not found");
 
+            Optional<Users> user = userRepository.findById(filterHotelRequestDTO.getUserId());
+
+            if(!user.isPresent())
+                throw new GlobalHotelHubServiceException(RESOURCE_NOT_FOUND, "User not found");
+
+            SearchHotelHistory searchHotelHistory = new SearchHotelHistory();
+            searchHotelHistory.setUsers(user.get());
+            searchHotelHistory.setLocation(filterHotelRequestDTO.getLocation());
+            searchHotelHistory.setCheckin(filterHotelRequestDTO.getCheckin());
+            searchHotelHistory.setCheckout(filterHotelRequestDTO.getCheckout());
+            searchHotelHistory.setRooms(filterHotelRequestDTO.getRooms());
+            searchHotelHistory.setAdults(filterHotelRequestDTO.getAdults());
+            searchHotelHistory.setChild(filterHotelRequestDTO.getChild());
+            searchHotelHistory.setMaxPrice(filterHotelRequestDTO.getMaxPrice());
+            searchHotelHistory.setMinPrice(filterHotelRequestDTO.getMinPrice());
+            searchHotelHistory.setDateTime(new Date());
+
+            searchHotelHistoryRepository.save(searchHotelHistory);
 
             return responseDTOS;
 

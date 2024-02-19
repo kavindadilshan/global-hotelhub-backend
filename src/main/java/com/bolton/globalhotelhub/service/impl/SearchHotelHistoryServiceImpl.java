@@ -74,8 +74,8 @@ public class SearchHotelHistoryServiceImpl implements SearchHotelHistoryService 
 
             for (SearchHotelHistory searchHotelHistory:result){
                 SearchHotelHistoryResponseDTO searchHotelHistoryResponseDTO=new SearchHotelHistoryResponseDTO();
-                searchHotelHistoryResponseDTO.setUserId(searchHistory.getUsers().getId());
-                searchHotelHistoryResponseDTO.setFullName(searchHistory.getUsers().getName());
+                searchHotelHistoryResponseDTO.setUserId(searchHotelHistory.getUsers().getId());
+                searchHotelHistoryResponseDTO.setFullName(searchHotelHistory.getUsers().getName());
                 searchHotelHistoryResponseDTO.setLocation(searchHotelHistory.getLocation());
                 searchHotelHistoryResponseDTO.setCheckin(searchHotelHistory.getCheckin());
                 searchHotelHistoryResponseDTO.setCheckout(searchHotelHistory.getCheckout());
