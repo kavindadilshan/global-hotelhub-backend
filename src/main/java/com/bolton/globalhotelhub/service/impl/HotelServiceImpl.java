@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.bolton.globalhotelhub.constant.ErrorCodeConstant.RESOURCE_NOT_FOUND;
 
@@ -52,18 +54,18 @@ public class HotelServiceImpl implements HotelService {
             List<ResponseDTO> responseDTOS = new ArrayList<>();
 
             String BookingComUrl = String.format(ApplicationConstant.BOOKING_COM_URL, filterHotelRequestDTO.getLocation(), filterHotelRequestDTO.getCheckin(), filterHotelRequestDTO.getCheckout(), filterHotelRequestDTO.getAdults(), filterHotelRequestDTO.getRooms(), filterHotelRequestDTO.getChild(), filterHotelRequestDTO.getMinPrice(), filterHotelRequestDTO.getMaxPrice());
-            String HotelComUrl = String.format(ApplicationConstant.HOTEL_COM_URL, filterHotelRequestDTO.getAdults(), filterHotelRequestDTO.getChild(), filterHotelRequestDTO.getCheckin(), filterHotelRequestDTO.getCheckout(), filterHotelRequestDTO.getLocation(), filterHotelRequestDTO.getRooms(),  filterHotelRequestDTO.getMinPrice(), filterHotelRequestDTO.getMaxPrice());
-            String AirBnbUrl = String.format(ApplicationConstant.AIR_BNB_URL, filterHotelRequestDTO.getLocation(),filterHotelRequestDTO.getAdults(), filterHotelRequestDTO.getChild(), filterHotelRequestDTO.getCheckin(), filterHotelRequestDTO.getCheckout(), filterHotelRequestDTO.getRooms(),  filterHotelRequestDTO.getMinPrice(), filterHotelRequestDTO.getMaxPrice());
+            String HotelComUrl = String.format(ApplicationConstant.HOTEL_COM_URL, filterHotelRequestDTO.getAdults(), filterHotelRequestDTO.getChild(), filterHotelRequestDTO.getCheckin(), filterHotelRequestDTO.getCheckout(), filterHotelRequestDTO.getLocation(), filterHotelRequestDTO.getRooms(), filterHotelRequestDTO.getMinPrice(), filterHotelRequestDTO.getMaxPrice());
+            String AirBnbUrl = String.format(ApplicationConstant.AIR_BNB_URL, filterHotelRequestDTO.getLocation(), filterHotelRequestDTO.getAdults(), filterHotelRequestDTO.getChild(), filterHotelRequestDTO.getCheckin(), filterHotelRequestDTO.getCheckout(), filterHotelRequestDTO.getRooms(), filterHotelRequestDTO.getMinPrice(), filterHotelRequestDTO.getMaxPrice());
 
             LOGGER.debug(AirBnbUrl);
 
             extractDataFromBookingCom(responseDTOS, BookingComUrl);
 //            extractDataFromHotelsCom(responseDTOS, HotelComUrl);
-            extractDataFromAirBnb(responseDTOS,AirBnbUrl);
+            extractDataFromAirBnb(responseDTOS, AirBnbUrl);
 
             Optional<Users> user = userRepository.findById(filterHotelRequestDTO.getUserId());
 
-            if(!user.isPresent())
+            if (!user.isPresent())
                 throw new GlobalHotelHubServiceException(RESOURCE_NOT_FOUND, "User not found");
 
             SearchHotelHistory searchHotelHistory = new SearchHotelHistory();
@@ -95,14 +97,25 @@ public class HotelServiceImpl implements HotelService {
             Elements mainItems = document.getElementsByClass("c82435a4b8");
             for (Element object : mainItems) {
 
-                if (object.getElementsByClass("a15b38c233").text().length()>0){
+                if (object.getElementsByClass("a15b38c233").text().length() > 0) {
                     ResponseDTO responseDTO = new ResponseDTO();
 
                     responseDTO.setTitle(object.getElementsByClass("a15b38c233").text());
                     responseDTO.setUrl(object.getElementsByTag("a").attr("href"));
                     responseDTO.setImage(object.getElementsByTag("img").attr("src"));
                     responseDTO.setAddress(object.getElementsByClass("def9bc142a").text());
-                    responseDTO.setPrice(object.getElementsByClass("fc367255e6").text());
+
+                    String price = object.getElementsByClass("e84eb96b1f").text();
+                    Pattern pattern = Pattern.compile("LKR\\s(\\d{1,3}(,\\d{3})*)(\\.\\d{1,2})?");
+                    Matcher matcher = pattern.matcher(price);
+
+                    if (matcher.find()) {
+                        String matchedPrice = matcher.group(1);
+                        responseDTO.setPrice("LKR " + matchedPrice);
+                    } else {
+                        responseDTO.setPrice("LKR " + price);
+                    }
+
                     responseDTO.setAmenities(object.getElementsByClass("fc367255e6").text());
                     responseDTO.setPublishSite("booking.com");
 
@@ -121,9 +134,7 @@ public class HotelServiceImpl implements HotelService {
     private void extractDataFromHotelsCom(List<ResponseDTO> responseDTOS, String url) {
         try {
 
-            Document document = Jsoup.connect(url)
-                    .method(Connection.Method.GET)
-                    .get();
+            Document document = Jsoup.connect(url).get();
             LOGGER.debug(document);
 //            Elements mainItems = document.getElementsByClass("property-listing-results");
 //            for (Element object : mainItems) {
@@ -162,144 +173,149 @@ public class HotelServiceImpl implements HotelService {
             Document document = Jsoup.connect(url).get();
 
             String mainItems = document.select("script#data-deferred-state").html();
-            JSONObject jsonData = new JSONObject(mainItems);
+
+            if (mainItems != null && !mainItems.isEmpty()) {
+                JSONObject jsonData = new JSONObject(mainItems);
 
 
+                JSONArray niobeMinimalClientDataArray = jsonData.getJSONArray("niobeMinimalClientData");
 
-            JSONArray niobeMinimalClientDataArray = jsonData.getJSONArray("niobeMinimalClientData");
+                // Check if the array has elements
+                if (niobeMinimalClientDataArray.length() > 0) {
+                    // Access the first element of the array
+                    JSONArray firstElementArray = niobeMinimalClientDataArray.getJSONArray(0);
 
-            // Check if the array has elements
-            if (niobeMinimalClientDataArray.length() > 0) {
-                // Access the first element of the array
-                JSONArray firstElementArray = niobeMinimalClientDataArray.getJSONArray(0);
+                    // Check if the first element array has elements
+                    if (firstElementArray.length() > 1) {
+                        // Access the second element of the first element array (which is a nested JSON object)
+                        JSONObject nestedJsonObject = firstElementArray.getJSONObject(1);
 
-                // Check if the first element array has elements
-                if (firstElementArray.length() > 1) {
-                    // Access the second element of the first element array (which is a nested JSON object)
-                    JSONObject nestedJsonObject = firstElementArray.getJSONObject(1);
+                        // Check if the nested JSON object has a 'data' property
+                        if (nestedJsonObject.has("data")) {
+                            // Access the 'data' object within the nested JSON structure
+                            JSONObject dataObject = nestedJsonObject.getJSONObject("data");
 
-                    // Check if the nested JSON object has a 'data' property
-                    if (nestedJsonObject.has("data")) {
-                        // Access the 'data' object within the nested JSON structure
-                        JSONObject dataObject = nestedJsonObject.getJSONObject("data");
+                            // Check if the 'data' object has a 'presentation' property
+                            if (dataObject.has("presentation")) {
+                                // Access the 'presentation' object within the 'data' object
+                                JSONObject presentationObject = dataObject.getJSONObject("presentation");
 
-                        // Check if the 'data' object has a 'presentation' property
-                        if (dataObject.has("presentation")) {
-                            // Access the 'presentation' object within the 'data' object
-                            JSONObject presentationObject = dataObject.getJSONObject("presentation");
+                                // Check if the 'presentation' object has a 'staysSearch' property
+                                if (presentationObject.has("staysSearch")) {
+                                    // Access the 'staysSearch' object within the 'presentation' object
+                                    JSONObject staysSearchObject = presentationObject.getJSONObject("staysSearch");
 
-                            // Check if the 'presentation' object has a 'staysSearch' property
-                            if (presentationObject.has("staysSearch")) {
-                                // Access the 'staysSearch' object within the 'presentation' object
-                                JSONObject staysSearchObject = presentationObject.getJSONObject("staysSearch");
+                                    // Check if the 'staysSearch' object has a 'results' property
+                                    if (staysSearchObject.has("results")) {
+                                        // Access the 'results' object within the 'staysSearch' object
+                                        JSONObject resultsObject = staysSearchObject.getJSONObject("results");
 
-                                // Check if the 'staysSearch' object has a 'results' property
-                                if (staysSearchObject.has("results")) {
-                                    // Access the 'results' object within the 'staysSearch' object
-                                    JSONObject resultsObject = staysSearchObject.getJSONObject("results");
+                                        // Check if the 'results' object has a 'searchResults' property
+                                        if (resultsObject.has("searchResults")) {
+                                            // Access the 'searchResults' array within the 'results' object
+                                            JSONArray searchResultsArray = resultsObject.getJSONArray("searchResults");
 
-                                    // Check if the 'results' object has a 'searchResults' property
-                                    if (resultsObject.has("searchResults")) {
-                                        // Access the 'searchResults' array within the 'results' object
-                                        JSONArray searchResultsArray = resultsObject.getJSONArray("searchResults");
+                                            for (Object object : searchResultsArray) {
 
-                                        for (Object object : searchResultsArray) {
+                                                JSONObject jsonDataObj = (JSONObject) object;
 
-                                            JSONObject jsonDataObj = (JSONObject) object;
+                                                JSONObject result = jsonDataObj.getJSONObject("listing");
+                                                String bodyValue = "1 bed";
+                                                String price = "";
 
-                                            JSONObject result = jsonDataObj.getJSONObject("listing");
-                                            String bodyValue = "1 bed";
-                                            String price = "";
+                                                Object pictureArray = result.getJSONArray("contextualPictures");
 
-                                            Object pictureArray = result.getJSONArray("contextualPictures");
+                                                JSONObject picObject = ((JSONArray) pictureArray).getJSONObject(0);
 
-                                            JSONObject picObject = ((JSONArray) pictureArray).getJSONObject(0);
+                                                JSONObject pricingQuoteObj = (JSONObject) object;
+                                                JSONObject pricingQuote = pricingQuoteObj.getJSONObject("pricingQuote");
 
-                                            JSONObject pricingQuoteObj = (JSONObject) object;
-                                            JSONObject pricingQuote = pricingQuoteObj.getJSONObject("pricingQuote");
-
-                                            JSONObject priceObj = pricingQuote.getJSONObject("structuredStayDisplayPrice");
-
-
-                                            JSONObject pricePrimaryLine = priceObj.getJSONObject("primaryLine");
-
-                                            if (pricePrimaryLine.has("price")) {
-                                                price = pricePrimaryLine.getString("price");
-                                            }else {
-                                                price = pricePrimaryLine.getString("discountedPrice");
-                                            }
+                                                JSONObject priceObj = pricingQuote.getJSONObject("structuredStayDisplayPrice");
 
 
-                                            try {
-                                                JSONObject structuredObj = ((JSONObject) result).getJSONObject("structuredContent");
+                                                JSONObject pricePrimaryLine = priceObj.getJSONObject("primaryLine");
 
-                                                if (structuredObj.has("primaryLine")) {
-                                                    Object primaryLineObject = structuredObj.get("primaryLine");
+                                                if (pricePrimaryLine.has("price")) {
+                                                    price = pricePrimaryLine.getString("price");
+                                                } else {
+                                                    price = pricePrimaryLine.getString("discountedPrice");
+                                                }
 
-                                                    if (primaryLineObject instanceof JSONArray) {
-                                                        // It's an array, handle it as such
-                                                        JSONArray primaryLine = (JSONArray) primaryLineObject;
 
-                                                        if (primaryLine.length() > 0) {
-                                                            JSONObject jsonObject = primaryLine.getJSONObject(0);
+                                                try {
+                                                    JSONObject structuredObj = ((JSONObject) result).getJSONObject("structuredContent");
+
+                                                    if (structuredObj.has("primaryLine")) {
+                                                        Object primaryLineObject = structuredObj.get("primaryLine");
+
+                                                        if (primaryLineObject instanceof JSONArray) {
+                                                            // It's an array, handle it as such
+                                                            JSONArray primaryLine = (JSONArray) primaryLineObject;
+
+                                                            if (primaryLine.length() > 0) {
+                                                                JSONObject jsonObject = primaryLine.getJSONObject(0);
+
+                                                                if (jsonObject.has("body")) {
+                                                                    bodyValue = jsonObject.getString("body");
+                                                                }
+                                                            }
+                                                        } else if (primaryLineObject instanceof JSONObject) {
+                                                            // It's an object, handle it as such
+                                                            JSONObject jsonObject = (JSONObject) primaryLineObject;
 
                                                             if (jsonObject.has("body")) {
                                                                 bodyValue = jsonObject.getString("body");
                                                             }
                                                         }
-                                                    } else if (primaryLineObject instanceof JSONObject) {
-                                                        // It's an object, handle it as such
-                                                        JSONObject jsonObject = (JSONObject) primaryLineObject;
-
-                                                        if (jsonObject.has("body")) {
-                                                            bodyValue = jsonObject.getString("body");
-                                                        }
                                                     }
+                                                } catch (Exception e) {
+                                                    e.printStackTrace();
                                                 }
-                                            } catch (Exception e) {
-                                                e.printStackTrace();
+
+
+                                                ResponseDTO responseDTO = new ResponseDTO();
+
+                                                responseDTO.setTitle(result.getString("title"));
+                                                responseDTO.setUrl("#");
+                                                responseDTO.setImage(picObject.getString("picture"));
+                                                responseDTO.setAddress(result.getString("name"));
+                                                responseDTO.setPrice(price);
+                                                responseDTO.setAmenities(bodyValue);
+                                                responseDTO.setPublishSite("airbnb.com");
+//
+                                                responseDTOS.add(responseDTO);
                                             }
 
-
-                                            ResponseDTO responseDTO = new ResponseDTO();
-
-                                            responseDTO.setTitle(result.getString("title"));
-                                            responseDTO.setUrl("#");
-                                            responseDTO.setImage(picObject.getString("picture"));
-                                            responseDTO.setAddress(result.getString("name"));
-                                            responseDTO.setPrice(price);
-                                            responseDTO.setAmenities(bodyValue);
-                                            responseDTO.setPublishSite("airbnb.com");
-//
-                                            responseDTOS.add(responseDTO);
-                                        }
-
-                                        // Use the 'searchResults' array as needed
+                                            // Use the 'searchResults' array as needed
 //                                        System.out.println(searchResultsArray.toString());
+                                        } else {
+                                            System.out.println("'searchResults' array not found in 'results' object");
+                                        }
                                     } else {
-                                        System.out.println("'searchResults' array not found in 'results' object");
+                                        System.out.println("'results' object not found in 'staysSearch' object");
                                     }
                                 } else {
-                                    System.out.println("'results' object not found in 'staysSearch' object");
+                                    System.out.println("'staysSearch' object not found in 'presentation' object");
                                 }
                             } else {
-                                System.out.println("'staysSearch' object not found in 'presentation' object");
+                                System.out.println("'presentation' object not found in 'data' object");
                             }
                         } else {
-                            System.out.println("'presentation' object not found in 'data' object");
+                            System.out.println("'data' object not found in nested JSON");
                         }
                     } else {
-                        System.out.println("'data' object not found in nested JSON");
+                        System.out.println("Not enough elements in the first element array");
                     }
                 } else {
-                    System.out.println("Not enough elements in the first element array");
+                    System.out.println("No elements found in 'niobeMinimalClientData' array");
                 }
             } else {
-                System.out.println("No elements found in 'niobeMinimalClientData' array");
+                System.out.println("mainItems is null or empty");
             }
 
+
         } catch (IOException ex) {
-            LOGGER.error("Function : extractDataFromBookingCom  : " + ex.getMessage());
+            LOGGER.error("Function : extractDataFromAirbnb : " + ex.getMessage());
             ex.printStackTrace();
         }
     }
