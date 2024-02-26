@@ -106,6 +106,7 @@ public class HotelServiceImpl implements HotelService {
                     responseDTO.setAddress(object.getElementsByClass("def9bc142a").text());
 
                     String price = object.getElementsByClass("e84eb96b1f").text();
+                    if (price.isEmpty()) price = object.select(".c066246e13 > div > div > div > div > div > div > span ").text();
                     Pattern pattern = Pattern.compile("LKR\\s(\\d{1,3}(,\\d{3})*)(\\.\\d{1,2})?");
                     Matcher matcher = pattern.matcher(price);
 
@@ -276,7 +277,7 @@ public class HotelServiceImpl implements HotelService {
                                                 ResponseDTO responseDTO = new ResponseDTO();
 
                                                 responseDTO.setTitle(result.getString("title"));
-                                                responseDTO.setUrl("#");
+                                                responseDTO.setUrl("https://www.airbnb.com/");
                                                 responseDTO.setImage(picObject.getString("picture"));
                                                 responseDTO.setAddress(result.getString("name"));
                                                 responseDTO.setPrice(price);

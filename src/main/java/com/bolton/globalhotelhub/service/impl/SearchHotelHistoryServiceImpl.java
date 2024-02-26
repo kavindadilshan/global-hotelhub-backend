@@ -168,7 +168,7 @@ public class SearchHotelHistoryServiceImpl implements SearchHotelHistoryService 
                 UserReportResponseDTO userReportResponseDTO = new UserReportResponseDTO();
                 userReportResponseDTO.setName(reportRawData.getName());
                 userReportResponseDTO.setEmail(reportRawData.getEmail());
-                userReportResponseDTO.setContactNumber(reportRawData.getContact_Number());
+                userReportResponseDTO.setContactNumber(reportRawData.getContactNumber());
                 userReportResponseDTO.setActiveTimes(reportRawData.getFiltering_Count());
 
                 responseDTOS.add(userReportResponseDTO);
