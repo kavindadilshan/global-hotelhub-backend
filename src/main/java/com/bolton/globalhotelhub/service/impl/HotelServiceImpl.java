@@ -13,15 +13,18 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,6 +34,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 import static com.bolton.globalhotelhub.constant.ErrorCodeConstant.RESOURCE_NOT_FOUND;
 
 @Service
@@ -39,11 +43,13 @@ public class HotelServiceImpl implements HotelService {
     private static final Logger LOGGER = LogManager.getLogger(HotelServiceImpl.class);
     private final UserRepository userRepository;
     private final SearchHotelHistoryRepository searchHotelHistoryRepository;
+    private final ChromeDriver driver;
 
     @Autowired
-    public HotelServiceImpl(UserRepository userRepository, SearchHotelHistoryRepository searchHotelHistoryRepository) {
+    public HotelServiceImpl(UserRepository userRepository, SearchHotelHistoryRepository searchHotelHistoryRepository, ChromeDriver driver) {
         this.userRepository = userRepository;
         this.searchHotelHistoryRepository = searchHotelHistoryRepository;
+        this.driver = driver;
     }
 
     @Override
@@ -57,11 +63,11 @@ public class HotelServiceImpl implements HotelService {
             String HotelComUrl = String.format(ApplicationConstant.HOTEL_COM_URL, filterHotelRequestDTO.getAdults(), filterHotelRequestDTO.getChild(), filterHotelRequestDTO.getCheckin(), filterHotelRequestDTO.getCheckout(), filterHotelRequestDTO.getLocation(), filterHotelRequestDTO.getRooms(), filterHotelRequestDTO.getMinPrice(), filterHotelRequestDTO.getMaxPrice());
             String AirBnbUrl = String.format(ApplicationConstant.AIR_BNB_URL, filterHotelRequestDTO.getLocation(), filterHotelRequestDTO.getAdults(), filterHotelRequestDTO.getChild(), filterHotelRequestDTO.getCheckin(), filterHotelRequestDTO.getCheckout(), filterHotelRequestDTO.getRooms(), filterHotelRequestDTO.getMinPrice(), filterHotelRequestDTO.getMaxPrice());
 
-            LOGGER.debug(AirBnbUrl);
+            LOGGER.debug(HotelComUrl);
 
             extractDataFromBookingCom(responseDTOS, BookingComUrl);
-//            extractDataFromHotelsCom(responseDTOS, HotelComUrl);
             extractDataFromAirBnb(responseDTOS, AirBnbUrl);
+            extractDataFromHotelsCom(responseDTOS, HotelComUrl);
 
             Optional<Users> user = userRepository.findById(filterHotelRequestDTO.getUserId());
 
@@ -106,7 +112,8 @@ public class HotelServiceImpl implements HotelService {
                     responseDTO.setAddress(object.getElementsByClass("def9bc142a").text());
 
                     String price = object.getElementsByClass("e84eb96b1f").text();
-                    if (price.isEmpty()) price = object.select(".c066246e13 > div > div > div > div > div > div > span ").text();
+                    if (price.isEmpty())
+                        price = object.select(".c066246e13 > div > div > div > div > div > div > span ").text();
                     Pattern pattern = Pattern.compile("LKR\\s(\\d{1,3}(,\\d{3})*)(\\.\\d{1,2})?");
                     Matcher matcher = pattern.matcher(price);
 
@@ -134,38 +141,83 @@ public class HotelServiceImpl implements HotelService {
 
     private void extractDataFromHotelsCom(List<ResponseDTO> responseDTOS, String url) {
         try {
+            driver.get(url);
+            List<WebElement> elements = driver.findElements(By.cssSelector("div[data-stid='lodging-card-responsive']"));
 
-            Document document = Jsoup.connect(url).get();
-            LOGGER.debug(document);
-//            Elements mainItems = document.getElementsByClass("property-listing-results");
-//            for (Element object : mainItems) {
-//
-//                LOGGER.debug(object.getElementsByClass("uitk-heading").text());
-//                LOGGER.debug(object.getElementsByTag("a").attr("href"));
-//                LOGGER.debug(object.getElementsByClass("def9bc142a").text());
-//                LOGGER.debug(object.getElementsByClass("e84eb96b1f").text());
-//                LOGGER.debug(object.getElementsByClass("fc367255e6").text());
-//                LOGGER.debug(object.getElementsByTag("img").attr("src"));
+            elements.forEach(element -> {
+
+                // GET THE NAME OF EACH LODGING (LODGING NAME IS INCLUDED IN A H3 TAG WITH CLASS 'uitk-heading'
+                List<WebElement> headings = element.findElements(By.className("uitk-heading"));
+
+                // GET THE LOCATION DETAILS OF EACH LODGING (ELEMENTS WITH CLASS - 'uitk-text-spacing-half' INCLUDES THE MOST RELEVANT LOCATION DETAILS
+                List<WebElement> location = element.findElements(By.className("uitk-text-default-theme"));
+
+                List<WebElement> amenities = element.findElements(By.className("truncate-lines-2"));
+
+                // GET THE PRICE OF EACH LODGING (MOST OF THE PRICE ELEMENTS HAVE THE CLASS 'uitk-type-500')
+                List<WebElement> price = element.findElements(By.className("uitk-type-500"));
+
+                List<WebElement> image = element.findElements(By.className("uitk-image-media"));
+
+                List<WebElement> urlElement = element.findElements(By.className("uitk-card-link"));
 
 
-//                ResponseDTO responseDTO = new ResponseDTO();
-//
-//                responseDTO.setTitle(object.getElementsByClass("a15b38c233").text());
-//                responseDTO.setUrl(object.getElementsByTag("a").attr("href"));
-//                responseDTO.setImage(object.getElementsByTag("img").attr("src"));
-//                responseDTO.setAddress(object.getElementsByClass("def9bc142a").text());
-//                responseDTO.setPrice(object.getElementsByClass("fc367255e6").text());
-//                responseDTO.setAmenities(object.getElementsByClass("fc367255e6").text());
-//                responseDTO.setPublishSite("booking.com");
-////
-//                responseDTOS.add(responseDTO);
+                ResponseDTO responseDTO = new ResponseDTO();
+                responseDTO.setTitle(getStringFromElements(headings));
+                responseDTO.setUrl(getLinkFromElements(urlElement));
+                responseDTO.setAddress(getStringFromElements(location));
+                responseDTO.setPrice(getStringFromElements(price));
+                responseDTO.setAmenities(getStringFromElements(amenities));
+                responseDTO.setPublishSite("hotels.com");
 
-//            }
+                String imageSrc = getImageSrcFromElements(image);
 
-        } catch (IOException ex) {
+                if (imageSrc.isEmpty()) {
+                    // If the returned image source string is empty, set a default image source
+                    responseDTO.setImage("https://images.trvl-media.com/lodging/73000000/72310000/72300100/72300003/a66de126.jpg?impolicy=resizecrop&rw=455&ra=fit");
+                } else {
+                    // If the returned image source string is not empty, use it
+                    responseDTO.setImage(imageSrc);
+                }
+
+                responseDTOS.add(responseDTO);
+
+            });
+
+        } catch (Exception ex) {
             LOGGER.error("Function : extractDataFromBookingCom  : " + ex.getMessage());
             ex.printStackTrace();
         }
+    }
+
+    private String getStringFromElements(List<WebElement> elements) {
+        StringBuilder sb = new StringBuilder();
+        elements.forEach(e -> sb.append(e.getText()).append(" "));
+        return sb.toString();
+    }
+
+    private String getImageSrcFromElements(List<WebElement> elements) {
+        StringBuilder sb = new StringBuilder();
+        elements.forEach(e -> {
+            String src = e.getAttribute("src");
+            if (src != null && !src.isEmpty()) {
+                sb.append(src).append(" ");
+            }
+        });
+        return sb.toString().trim();
+    }
+
+    private String getLinkFromElements(List<WebElement> elements) {
+        StringBuilder sb = new StringBuilder();
+        elements.forEach(e -> {
+            String href = e.getAttribute("href");
+            if (href != null && !href.isEmpty()) {
+                sb.append(href).append(" ");
+            } else {
+                sb.append("https://www.hotels.com").append(" ");
+            }
+        });
+        return sb.toString().trim();
     }
 
     private void extractDataFromAirBnb(List<ResponseDTO> responseDTOS, String url) {
@@ -173,7 +225,9 @@ public class HotelServiceImpl implements HotelService {
 
             Document document = Jsoup.connect(url).get();
 
-            String mainItems = document.select("script#data-deferred-state").html();
+//            LOGGER.debug(document);
+
+            String mainItems = document.select("script#data-deferred-state-0").html();
 
             if (mainItems != null && !mainItems.isEmpty()) {
                 JSONObject jsonData = new JSONObject(mainItems);
