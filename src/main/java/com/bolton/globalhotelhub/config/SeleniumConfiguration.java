@@ -2,6 +2,8 @@ package com.bolton.globalhotelhub.config;
 
 import javax.annotation.PostConstruct;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.DesiredCapabilities;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,6 +17,13 @@ public class SeleniumConfiguration {
 
     @Bean
     public ChromeDriver driver() {
-        return new ChromeDriver();
+        ChromeOptions options = new ChromeOptions();
+
+
+        DesiredCapabilities caps = new DesiredCapabilities();
+        caps.setCapability("pageLoadStrategy", "eager");
+
+
+        return new ChromeDriver(options.merge(caps));
     }
 }

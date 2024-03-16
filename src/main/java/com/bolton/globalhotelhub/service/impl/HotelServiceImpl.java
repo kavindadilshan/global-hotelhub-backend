@@ -166,7 +166,7 @@ public class HotelServiceImpl implements HotelService {
                 responseDTO.setTitle(getStringFromElements(headings));
                 responseDTO.setUrl(getLinkFromElements(urlElement));
                 responseDTO.setAddress(getStringFromElements(location));
-                responseDTO.setPrice(getStringFromElements(price));
+                responseDTO.setPrice(getStringFromElements(price).replace("USD", "LKR"));
                 responseDTO.setAmenities(getStringFromElements(amenities));
                 responseDTO.setPublishSite("hotels.com");
 
@@ -334,7 +334,7 @@ public class HotelServiceImpl implements HotelService {
                                                 responseDTO.setUrl("https://www.airbnb.com/");
                                                 responseDTO.setImage(picObject.getString("picture"));
                                                 responseDTO.setAddress(result.getString("name"));
-                                                responseDTO.setPrice(price);
+                                                responseDTO.setPrice(price.replace("Rs", "LKR"));
                                                 responseDTO.setAmenities(bodyValue);
                                                 responseDTO.setPublishSite("airbnb.com");
 //
